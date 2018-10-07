@@ -8,6 +8,8 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.Diagnostics;
 using System.Windows.Forms;
+using WindowsInput;
+using WindowsInput.Native;
 
 namespace SiopaRetardBot
 {
@@ -43,7 +45,7 @@ namespace SiopaRetardBot
         [DllImport("user32.dll")]
         private static extern void keybd_event(byte bVk, byte bScan, int dwFlags, int dwExtraInfo);
 
-        const String versionString = "RETARD1.0";
+        const String versionString = "RETARD1.1";
 
         static void Main(string[] args)
         {
@@ -158,12 +160,21 @@ namespace SiopaRetardBot
                 Console.WriteLine("Loop number:" + count);
 
                 // Check if process exists
-                Process p2 = Process.GetProcessesByName("Game").FirstOrDefault(); // Adicionar escolha de processo?
+                Process p2 = Process.GetProcessesByName(processName).FirstOrDefault(); // Adicionar escolha de processo?
                 if (p2 == null)
                 {
                     Console.WriteLine("Null process error (" + processName + ").");
                     Console.ReadLine();
                     return;
+                }
+                else
+                {
+                    InputSimulator a = new InputSimulator();
+                    if (a.InputDeviceState.IsTogglingKeyInEffect(VirtualKeyCode.CAPITAL))
+                    {
+                        Console.WriteLine("Terminated bot!");
+                        Console.ReadLine();
+                    }
                 }
 
                 // Run commands
@@ -175,9 +186,11 @@ namespace SiopaRetardBot
                         case 0x7B:
                             IntPtr h = p.MainWindowHandle;
                             SetForegroundWindow(h);
-                            keybd_event(0x7b, 0x58, 0, 0);
-                            Console.WriteLine("Keypress: " + "0x07B");
-                            keybd_event(0x7b, 0xd8, 2, 0);
+                            //keybd_event(0x7b, 0x58, 0, 0);
+                            Console.WriteLine("Keypress: " + 0x07B);
+                            //keybd_event(0x7b, 0xd8, 2, 0);
+                            InputSimulator inp2 = new InputSimulator();
+                            inp2.Keyboard.KeyPress((VirtualKeyCode)0x07B);
                             break;
                         case 0:
                             IntPtr h3 = p.MainWindowHandle;
@@ -207,16 +220,53 @@ namespace SiopaRetardBot
                             }
 
                             break;
+                        case -3:
+                            //etForegroundWindow(Process.GetCurrentProcess().MainWindowHandle);
+                            Color curPixelColor2 = GetColorAt(targetPoint.X, targetPoint.Y);
+                            Console.Write("Current Colour:" + curPixelColor2 + " | Target:" + shinyColor);
+                            if (curPixelColor2.Equals(shinyColor) )
+                            {
+                                ConsoleColor curColor = Console.ForegroundColor;
+                                Console.ForegroundColor = ConsoleColor.Green;
+                                Console.WriteLine(" MATCH!");
+                                Console.ForegroundColor = curColor;
+                                shinyFound = true;
+                            }
+                            else
+                            {
+                                ConsoleColor curColor = Console.ForegroundColor;
+                                Console.ForegroundColor = ConsoleColor.DarkRed;
+                                Console.WriteLine(" MISMATCH!");
+                                Console.ForegroundColor = curColor;
+
+                                // Reset spam
+                                if (curPixelColor2.Equals(ogColor))
+                                {
+                                    for (int i = 0; i < 200; i++)
+                                    {
+                                        IntPtr h4 = p.MainWindowHandle;
+                                        SetForegroundWindow(h4);
+                                        //keybd_event(0x7b, 0x58, 0, 0);
+                                        Console.WriteLine("Keypress (SPAM): " + 0x07B);
+                                        //keybd_event(0x7b, 0xd8, 2, 0);
+                                        InputSimulator inp24 = new InputSimulator();
+                                        inp24.Keyboard.KeyPress((VirtualKeyCode)0x07B);
+                                    }
+                                }
+
+                            }
+
+                            break;
                         default:
-                            if (command < -3) // É um delay
+                            if (command < -4) // É um delay
                             {
 
-                                Console.WriteLine("Delay: " + -1*(command+3));
-                                System.Threading.Thread.Sleep(-1 * (command + 3));
+                                Console.WriteLine("Delay: " + -1*(command+4));
+                                System.Threading.Thread.Sleep(-1 * (command + 4));
                             }
 
                             // Keys
-                            if (command > 0)
+                            if (command > 0 && command < 1000)
                             {
                                 IntPtr h2 = p.MainWindowHandle;
                                 SetForegroundWindow(h2);
@@ -226,6 +276,26 @@ namespace SiopaRetardBot
                                 SendKeys.SendWait(commandCharStr);
                                 
                                 //PostMessage(h, 0x0100, command, 0);
+                            }
+                            else if (command < 2000 && command > 1000)
+                            {
+                                SetForegroundWindow(p.MainWindowHandle);
+
+                                Console.WriteLine("Keypress: " + (command-1000));
+                                InputSimulator inp = new InputSimulator();
+                                inp.Keyboard.KeyPress((VirtualKeyCode)command - 1000);
+                                
+                            }
+                            else if (command < 3000 && command > 2000)
+                            {
+                                SetForegroundWindow(p.MainWindowHandle);
+
+                                Console.WriteLine("Keypress (SPAM EDITION): " + (command - 1000));
+                                InputSimulator inp = new InputSimulator();
+                                for (int i = 0; i < 200; i++)
+                                {
+                                    inp.Keyboard.KeyPress((VirtualKeyCode)command - 2000);
+                                }
                             }
                             break;
                     }
@@ -273,9 +343,12 @@ namespace SiopaRetardBot
                         case "check":
                             characterVal = -2;
                             break;
+                        case "checkreset":
+                            characterVal = -3;
+                            break;
                         case "delay":
                             if (Int32.Parse(words[1]) <= 0) words[1] = "1000";
-                            characterVal = -3 - Int32.Parse(words[1]);
+                            characterVal = -4 - Int32.Parse(words[1]);
                             break;
                         /*case "ENTER":
                             characterVal = 0x0D;
@@ -301,8 +374,17 @@ namespace SiopaRetardBot
                         case "F12":
                             characterVal = 0x7B;
                             break;
-                        case "KEYCODE":
+                        case "DKEYCODE":
                             characterVal = Int32.Parse(words[1]);
+                            break;
+                        case "KEYCODE":
+                            characterVal = Convert.ToInt32(words[1], 16);
+                            break;
+                        case "KEYSIM":
+                            characterVal = 1000 + Convert.ToInt32(words[1], 16);
+                            break;
+                        case "KEYSPAM":
+                            characterVal = 2000 + Convert.ToInt32(words[1], 16);
                             break;
                         default:
                             // Get character
