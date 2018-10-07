@@ -46,6 +46,7 @@ namespace SiopaRetardBot
         private static extern void keybd_event(byte bVk, byte bScan, int dwFlags, int dwExtraInfo);
 
         const String versionString = "RETARD1.1";
+        const int RESET_KEY = 0x07B;
 
         static void Main(string[] args)
         {
@@ -247,10 +248,10 @@ namespace SiopaRetardBot
                                         IntPtr h4 = p.MainWindowHandle;
                                         SetForegroundWindow(h4);
                                         //keybd_event(0x7b, 0x58, 0, 0);
-                                        Console.WriteLine("Keypress (SPAM): " + 0x07B);
+                                        Console.WriteLine("Keypress (SPAM): " + RESET_KEY);
                                         //keybd_event(0x7b, 0xd8, 2, 0);
                                         InputSimulator inp24 = new InputSimulator();
-                                        inp24.Keyboard.KeyPress((VirtualKeyCode)0x07B);
+                                        inp24.Keyboard.KeyPress((VirtualKeyCode)RESET_KEY);
                                     }
                                 }
 
