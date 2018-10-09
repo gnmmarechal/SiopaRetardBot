@@ -76,11 +76,13 @@ namespace SiopaRetardBot
             String processName = "";
             int resetKey = 0x00;
             int killToggle = 0x14;
+            int pauseKey = 0x90;
             int maxLoop = int.MaxValue;
             int[] mainLoopIndex = { fileContents.IndexOf("START"), fileContents.IndexOf("LOOP") }; // Gets indexes of main loop
             int[] resetIndex = { fileContents.IndexOf("CONFIGRESET"), fileContents.IndexOf("ENDRESET") }; // Gets indexes of reset loop
             int endIndex = fileContents.IndexOf("END"); // Gets index of END
             int loopNumber = 0;
+            int resetCounter = 0;
 
 
             // Variable Tables
@@ -191,6 +193,10 @@ namespace SiopaRetardBot
                                 killToggle = Convert.ToInt32(commandArray[1], 16);
                                 Console.WriteLine("Kill Toggle: " + killToggle);
                                 break;
+                            case "PAUSE": // Define pause toggle
+                                pauseKey = Convert.ToInt32(commandArray[1], 16);
+                                Console.WriteLine("Pause Toggle: " + resetKey);
+                                break;
                             case "RESET": // Define the reset key
                                 resetKey = Convert.ToInt32(commandArray[1], 16);
                                 Console.WriteLine("Reset Key: " + resetKey);
@@ -264,7 +270,6 @@ namespace SiopaRetardBot
                 else if (readMode == 1)
                 {
                     // Main Loop Mode
-                    bool newLoop = true;
                     p2 = Process.GetProcessesByName(processName).FirstOrDefault();
                     if (p2 == null)
                     {
@@ -273,12 +278,17 @@ namespace SiopaRetardBot
                         break;
                     }
                     InputSimulator a = new InputSimulator();
-                    if (a.InputDeviceState.IsTogglingKeyInEffect(VirtualKeyCode.CAPITAL))
+                    if (a.InputDeviceState.IsTogglingKeyInEffect((VirtualKeyCode)killToggle))
                     {
                         Console.WriteLine("Terminated!");
                         Console.ReadLine();
                         runningLoop = false;
                         break;
+                    }
+                    while (a.InputDeviceState.IsTogglingKeyInEffect((VirtualKeyCode)pauseKey))
+                    {
+                        Console.WriteLine("Paused!");
+                        Console.ReadLine();
                     }
                     if (loopNumber >= maxLoop)
                     {
@@ -462,7 +472,7 @@ namespace SiopaRetardBot
                                 break;
                             case "IF": // Branch conditions
 
-                                // TO-DO --- Remove hardcoded ops no if
+                                // TO-DO --- Remove hardcoded shit
                                 if (commandArray[1].Equals("COLORMATCH"))
                                 {
                                     Color c1 = colourMap[commandArray[2]];
@@ -506,6 +516,9 @@ namespace SiopaRetardBot
                                 break;
                             case "PRINTLOOP": // Prints the current loop
                                 Console.Write(loopNumber);
+                                break;
+                            case "PRINTRESET": // Prints the current reset count
+                                Console.Write(resetCounter);
                                 break;
                             default:
                                 break;
@@ -603,6 +616,9 @@ namespace SiopaRetardBot
                             case "PRINTLOOP": // Prints the current loop
                                 Console.Write(loopNumber);
                                 break;
+                            case "PRINTRESET": // Prints the current reset count
+                                Console.Write(resetCounter);
+                                break;
                             default:
                                 break;
                         }
@@ -624,6 +640,7 @@ namespace SiopaRetardBot
                         //inp2.Keyboard.KeyPress((VirtualKeyCode)resetKey);
                         SendKeys.SendWait(resetString);
                     }
+                    resetCounter++;
                     readMode = 1;
                 }
                 else if (readMode == 3)
@@ -751,6 +768,9 @@ namespace SiopaRetardBot
                                 break;
                             case "PRINTLOOP": // Prints the current loop
                                 Console.Write(loopNumber);
+                                break;
+                            case "PRINTRESET": // Prints the current reset count
+                                Console.Write(resetCounter);
                                 break;
                             default:
                                 break;

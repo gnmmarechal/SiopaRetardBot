@@ -6,6 +6,7 @@ PRINTLN SiopaRetardBot v.InsurgenceRetard2.0
 PROCESS Game
 RESET 0x7B
 KILL 0x14
+PAUSE 0x90
 WAITKEY any
 PRINTLN Reading original colour...
 POINT ogColorPoint setPoint 50
@@ -17,7 +18,7 @@ COLOR shinyColor getColorAt shinyColorPoint
 WAITKEY any
 PRINTLN Reading X/Y...
 POINT targetPoint setPoint 50
-MAXLOOP 2000
+
 # Loop
 START
 
@@ -37,6 +38,11 @@ LOOP
 CONFIGRESET
 
 PRINTLN Colour mismatch! Resetting.
+
+PRINT Reset Number: 
+PRINTRESET
+
+PRINTLN .
 
 ENDRESET
 
