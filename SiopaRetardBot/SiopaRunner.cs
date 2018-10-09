@@ -6,6 +6,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 using WindowsInput;
 using WindowsInput.Native;
 
@@ -44,22 +45,36 @@ namespace SiopaRetardBot
         // Main parser
         static void Main(String[] args)
         {
-
+            String fileName = "default.sc";
+            if (args.Length > 0)
+            {
+                fileName = args[0];
+            }
             // Get script
-            List<String> fileContents = readFile("insurgence.sc");
+            List<String> fileContents = readFile(fileName);
             foreach (String line in fileContents)
             {
                 Console.WriteLine(line);
             }
+            Console.WriteLine("Press ENTER to run script.");
             Console.ReadLine();
+
+            Dictionary<int, String> specialKeys = new Dictionary<int, String>();
+            int[] keyCodeList = { 0x08, 0x03, 0x14, 0x2E, 0x28, 0x23, 0x2F, 0x24, 0x2D, 0x25, 0x90, 0x22, 0x21, 0x2C, 0x27, 0x91, 0x09, 0x26, 0x70, 0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77, 0x78, 0x79, 0x7A, 0x7B, 0x7C, 0x7D, 0x7E, 0x7F, 0x6B, 0x6D, 0x6A, 0x6F };
+            String[] keyStringList = { "{BS}", "{BREAK}", "{CAPSLOCK}", "{DEL}", "{DOWN}", "{END}", "{HELP}", "{HOME}", "{INS}", "{LEFT}", "{NUMLOCK}", "{PGDN}", "{PGUP}", "{PRTSC}", "{RIGHT}", "{SCROLLLOCK}", "{TAB}", "{UP}", "{F1}", "{F2}", "{F3}", "{F4}", "{F5}", "{F6}", "{F7}", "{F8}", "{F9}", "{F10}", "{F11}", "{F12}", "{F13}", "{F14}", "{F15}", "{F16}", "{ADD}", "{SUBTRACT}", "{MULTIPLY}", "{DIVIDE}" };
+            for (int i = 0; i < keyCodeList.Length; i++)
+            {
+                specialKeys.Add(keyCodeList[i], keyStringList[i]);
+                //Console.WriteLine(keyCodeList[i] + " = " + keyStringList[i]);
+            }
+            //specialKeys.Add(0x07B, "{F12}");
 
             // Parser
             bool runningLoop = true;
 
             // Parse and run config part of the file
             String processName = "";
-            bool processIsSet = false;
-            int resetKey;
+            int resetKey = 0x00;
             int killToggle = 0x14;
             int maxLoop = int.MaxValue;
             int[] mainLoopIndex = { fileContents.IndexOf("START"), fileContents.IndexOf("LOOP") }; // Gets indexes of main loop
@@ -71,665 +86,7 @@ namespace SiopaRetardBot
             // Variable Tables
             Dictionary<String, Color> colourMap = new Dictionary<String, Color>();
             Dictionary<String, POINT> pointMap = new Dictionary<String, POINT>();
-
-            // Read config
-            
-            /*for (int j = 0; j < mainLoopIndex[0]; j++)
-            {
-                String command = fileContents.ElementAt(j);
-                String[] commandArray = command.Split(' ');
-                if (commandArray.Length == 0) // Quit if no command is found
-                {
-                    runningLoop = false;
-                    goto jumpToDie;
-                }
-                switch (commandArray[0])
-                {
-                    case "DELAY":
-                        sleep(int.Parse(commandArray[1]));
-                        break;
-                    case "PROCESS": // Process name
-                        if (!processIsSet)
-                        {
-                            commandArray = commandArray.Skip(1).ToArray();
-                            for (int i = 0; i < commandArray.Length; i++) // Concatenar o array (sem PROCESS)
-                            {
-                                if (i == commandArray.Length - 1)
-                                {
-                                    processName += commandArray[i];
-                                }
-                                else
-                                {
-                                    processName += commandArray[i] + " ";
-                                }
-                            }
-                            processIsSet = true;
-                            Console.WriteLine("Target Process: " + processName);
-                        }
-                        else
-                        {
-                            Console.WriteLine("Error. Script attempted to set process twice.");
-                            runningLoop = false;
-                            goto jumpToDie;
-                        }
-                        break;
-
-                    case "PRINT": // Print Text to Console
-                        commandArray = commandArray.Skip(1).ToArray();
-                        String toPrint = "";
-                        for (int i = 0; i < commandArray.Length; i++) // Concatenar o array (sem PRINT)
-                        {
-                            if (i == commandArray.Length - 1)
-                            {
-                                toPrint += commandArray[i];
-                            }
-                            else
-                            {
-                                toPrint += commandArray[i] + " ";
-                            }
-                        }
-                        // Print do texto
-                        Console.Write(toPrint);
-                        break;
-                    case "PRINTLN": // Print Text to Console (Line)
-                        commandArray = commandArray.Skip(1).ToArray();
-                        toPrint = "";
-                        for (int i = 0; i < commandArray.Length; i++) // Concatenar o array (sem PRINTLN)
-                        {
-                            if (i == commandArray.Length - 1)
-                            {
-                                toPrint += commandArray[i];
-                            }
-                            else
-                            {
-                                toPrint += commandArray[i] + " ";
-                            }
-                        }
-                        // Print do texto
-                        Console.WriteLine(toPrint);
-                        break;
-
-                    case "KILL": // Define the kill toggle
-                        killToggle = Convert.ToInt32(commandArray[1], 16);
-                        Console.WriteLine("Kill Toggle: " + killToggle);
-                        break;
-                    case "RESET": // Define the reset key
-                        resetKey = Convert.ToInt32(commandArray[1], 16);
-                        Console.WriteLine("Reset Key: " + resetKey);
-                        break;
-                    case "MAXLOOP": // Define the maximum loop number
-                        maxLoop = Convert.ToInt32(commandArray[1], 10);
-                        Console.WriteLine("Max Loop: " + maxLoop);
-                        break;
-                    case "WAITKEY": // Waits for key input
-                        if (commandArray[1].Equals("any")) { Console.ReadLine(); break; }
-                        bool correctKey = false;
-                        while (!correctKey)
-                        {
-                            // To Do (Specific WAITKEY)
-                        }
-                        break;
-                    case "POINT": // POINT variable-related info
-                        String pointName = commandArray[1]; // Variable Name
-                        // Other argument
-                        if (commandArray[2].Equals("setPoint"))
-                        {
-                            sleep(int.Parse(commandArray[3])); // Pausa em ms
-                            POINT tempPoint;
-                            GetCursorPos(out tempPoint); // Obtém as coordenadas XY
-                            pointMap[pointName] = tempPoint; // Adiciona o ponto à lista
-                        }
-                        else if (commandArray[2].StartsWith("X") && commandArray[3].StartsWith("Y"))
-                        {
-                            // Definir o ponto pelas coordenadas
-                            POINT tempPoint;
-                            tempPoint.X = int.Parse(commandArray[2].TrimStart('X'));
-                            tempPoint.Y = int.Parse(commandArray[3].TrimStart('Y'));
-
-                            pointMap[pointName] = tempPoint;
-                        }
-                        break;
-                    case "COLOR": // COLOR variable-related info
-                        String colorName = commandArray[1]; // Variable Name
-                        // Other argument
-                        if (commandArray[2].Equals("getColorAt"))
-                        {
-                            POINT cPoint;
-                            cPoint.X = 0;
-                            cPoint.Y = 0;
-                            if (pointMap.ContainsKey(commandArray[3]))
-                            {
-                                cPoint = pointMap[commandArray[3]]; // Gets the point from the variable list
-                            }
-                            Color tempColor = GetColorAt(cPoint.X, cPoint.Y);
-                            //Console.WriteLine(tempColor);
-                            
-                            colourMap[colorName] = tempColor; // Adiciona o ponto à lista
-                        }
-                        else if (commandArray[2].StartsWith("R") && commandArray[3].StartsWith("G") && commandArray[4].StartsWith("B"))
-                        {
-                            // Definir o ponto pelas coordenadas
-                            Color tempColor = Color.FromArgb(255, int.Parse(commandArray[2].TrimStart('R')), int.Parse(commandArray[2].TrimStart('G')), int.Parse(commandArray[2].TrimStart('B')));
-
-                            colourMap[colorName] = tempColor;
-                        }
-                        break;
-                    case "PRINTLOOP": // Prints the current loop
-                        Console.Write(loopNumber);
-                        break;
-                    default:
-                        break;
-                }
-            }*/
-
-            if (!processIsSet)
-            {
-                runningLoop = false;
-                return;
-            }
-
-            
-            jumpToDie: // MAIN LOOP
-            // Die if process isn't running
-            runningLoop = processIsRunning(processName);
-            if (!runningLoop) goto End;
-
-            // Kill if KILL key is toggled
-            InputSimulator a = new InputSimulator();
-            if (a.InputDeviceState.IsTogglingKeyInEffect(VirtualKeyCode.CAPITAL))
-            {
-                Console.WriteLine("Terminated!");
-                Console.ReadLine();
-                runningLoop = false;
-                goto End;
-            }
-            // Parse loop stuff
-            Process p2 = Process.GetProcessesByName(processName).FirstOrDefault();
-            for (int j = mainLoopIndex[0]; j < mainLoopIndex[1]; j++)
-            {
-                String command = fileContents.ElementAt(j);
-                String[] commandArray = command.Split(' ');
-                if (commandArray.Length == 0) // Quit if no command is found
-                {
-                    runningLoop = false;
-                    goto End;
-                }
-                switch (commandArray[0])
-                {
-                    case "DELAY":
-                        sleep(int.Parse(commandArray[1]));
-                        break;
-                    case "PRINT": // Print Text to Console
-                        commandArray = commandArray.Skip(1).ToArray();
-                        String toPrint = "";
-                        for (int i = 0; i < commandArray.Length; i++) // Concatenar o array (sem PRINT)
-                        {
-                            if (i == commandArray.Length - 1)
-                            {
-                                toPrint += commandArray[i];
-                            }
-                            else
-                            {
-                                toPrint += commandArray[i] + " ";
-                            }
-                        }
-                        // Print do texto
-                        Console.Write(toPrint);
-                        break;
-                    case "PRINTLN": // Print Text to Console (Line)
-                        commandArray = commandArray.Skip(1).ToArray();
-                        toPrint = "";
-                        for (int i = 0; i < commandArray.Length; i++) // Concatenar o array (sem PRINTLN)
-                        {
-                            if (i == commandArray.Length - 1)
-                            {
-                                toPrint += commandArray[i];
-                            }
-                            else
-                            {
-                                toPrint += commandArray[i] + " ";
-                            }
-                        }
-                        // Print do texto
-                        Console.WriteLine(toPrint);
-                        break;
-                    case "WAITKEY": // Waits for key input
-                        if (commandArray[1].Equals("any")) { Console.ReadLine(); break; }
-                        bool correctKey = false;
-                        while (!correctKey)
-                        {
-                            // To Do (Specific WAITKEY)
-                        }
-                        break;
-                    case "POINT": // POINT variable-related info
-                        String pointName = commandArray[1]; // Variable Name
-                                                            // Other argument
-                        if (commandArray[2].Equals("setPoint"))
-                        {
-                            sleep(int.Parse(commandArray[3])); // Pausa em ms
-                            POINT tempPoint;
-                            GetCursorPos(out tempPoint); // Obtém as coordenadas XY
-                            pointMap[pointName] = tempPoint; // Adiciona o ponto à lista
-                        }
-                        else if (commandArray[2].StartsWith("X") && commandArray[3].StartsWith("Y"))
-                        {
-                            // Definir o ponto pelas coordenadas
-                            POINT tempPoint;
-                            tempPoint.X = int.Parse(commandArray[2].TrimStart('X'));
-                            tempPoint.Y = int.Parse(commandArray[3].TrimStart('Y'));
-
-                            pointMap[pointName] = tempPoint;
-                        }
-                        break;
-                    case "COLOR": // COLOR variable-related info
-                        String colorName = commandArray[1]; // Variable Name
-                                                            // Other argument
-                        if (commandArray[2].Equals("getColorAt"))
-                        {
-                            POINT cPoint;
-                            cPoint.X = 0;
-                            cPoint.Y = 0;
-                            if (pointMap.ContainsKey(commandArray[3]))
-                            {
-                                cPoint = pointMap[commandArray[3]]; // Gets the point from the variable list
-                            }
-                            Color tempColor = GetColorAt(cPoint.X, cPoint.Y);
-                            //Console.WriteLine(tempColor);
-
-                            colourMap[colorName] = tempColor; // Adiciona o ponto à lista
-                        }
-                        else if (commandArray[2].StartsWith("R") && commandArray[3].StartsWith("G") && commandArray[4].StartsWith("B"))
-                        {
-                            // Definir o ponto pelas coordenadas
-                            Color tempColor = Color.FromArgb(255, int.Parse(commandArray[2].TrimStart('R')), int.Parse(commandArray[2].TrimStart('G')), int.Parse(commandArray[2].TrimStart('B')));
-
-                            colourMap[colorName] = tempColor;
-                        }
-                        break;
-                    case "KEYSPAM": // Spams a key
-                        Console.WriteLine("Keypress (Spam Mode): " + Convert.ToInt32(commandArray[1], 16));
-                        SetForegroundWindow(p2.MainWindowHandle);
-                        InputSimulator inp = new InputSimulator();
-                        for (int i = 0; i < 200; i++)
-                        {
-                            inp.Keyboard.KeyPress((VirtualKeyCode)Convert.ToInt32(commandArray[1], 16));
-                        }
-                        break;
-
-                    case "KEYPRESS": // Presses a single key
-                        Console.WriteLine("Keypress: " + Convert.ToInt32(commandArray[1], 16));
-                        Process p21 = Process.GetProcessesByName(processName).FirstOrDefault();
-                        SetForegroundWindow(p21.MainWindowHandle);
-                        InputSimulator inp1 = new InputSimulator();
-                        inp1.Keyboard.KeyPress((VirtualKeyCode)Convert.ToInt32(commandArray[1], 16));
-                        break;
-                    case "IF": // Branch conditions
-
-                        // TO-DO --- Remove hardcoded ops no if
-                        if (commandArray[1].Equals("COLORMATCH"))
-                        {
-                            Color c1 = colourMap[commandArray[2]];
-                            Color c2 = colourMap[commandArray[3]];
-                            if (c1.Equals(c2))
-                            {
-                                // Run operation
-                                switch (commandArray[5])
-                                {
-                                    case "END":
-                                        goto jumpToEnd;
-                                        break;
-                                    case "DORESET":
-                                        goto jumpToReset;
-                                        break;
-                                    default:
-                                        break;
-                                }
-                            }
-                        }
-                        if (commandArray[1].Equals("COLORMISMATCH"))
-                        {
-                            Color c1 = colourMap[commandArray[2]];
-                            Color c2 = colourMap[commandArray[3]];
-                            if (!c1.Equals(c2))
-                            {
-                                // Run operation
-                                switch (commandArray[5])
-                                {
-                                    case "END":
-                                        goto jumpToEnd;
-                                        break;
-                                    case "DORESET":
-                                        goto jumpToReset;
-                                        break;
-                                    default:
-                                        break;
-                                }
-                            }
-                        }
-                        break;
-                    case "PRINTLOOP": // Prints the current loop
-                        Console.Write(loopNumber);
-                        break;
-                    default:
-                        break;
-                }
-            }
-
-            // Increment loop counter
-            loopNumber++;
-
-            // Kill process if loop max is set
-            if (loopNumber == maxLoop)
-            {
-                runningLoop = false;
-                Console.WriteLine("Maximum loop count reached (" + maxLoop + ").");
-                goto End;
-            }
-            goto jumpToDie;
-
-
-            // Pre-Reset Stuff
-            jumpToReset:
-            for (int j = resetIndex[0]; j < resetIndex[1]; j++)
-            {
-                String command = fileContents.ElementAt(j);
-                String[] commandArray = command.Split(' ');
-                if (commandArray.Length == 0) // Quit if no command is found
-                {
-                    runningLoop = false;
-                    goto End;
-                }
-                switch (commandArray[0])
-                {
-                    case "DELAY":
-                        sleep(int.Parse(commandArray[1]));
-                        break;
-                    case "PRINT": // Print Text to Console
-                        commandArray = commandArray.Skip(1).ToArray();
-                        String toPrint = "";
-                        for (int i = 0; i < commandArray.Length; i++) // Concatenar o array (sem PRINT)
-                        {
-                            if (i == commandArray.Length - 1)
-                            {
-                                toPrint += commandArray[i];
-                            }
-                            else
-                            {
-                                toPrint += commandArray[i] + " ";
-                            }
-                        }
-                        // Print do texto
-                        Console.Write(toPrint);
-                        break;
-                    case "PRINTLN": // Print Text to Console (Line)
-                        commandArray = commandArray.Skip(1).ToArray();
-                        toPrint = "";
-                        for (int i = 0; i < commandArray.Length; i++) // Concatenar o array (sem PRINTLN)
-                        {
-                            if (i == commandArray.Length - 1)
-                            {
-                                toPrint += commandArray[i];
-                            }
-                            else
-                            {
-                                toPrint += commandArray[i] + " ";
-                            }
-                        }
-                        // Print do texto
-                        Console.WriteLine(toPrint);
-                        break;
-                    case "WAITKEY": // Waits for key input
-                        if (commandArray[1].Equals("any")) { Console.ReadLine(); break; }
-                        bool correctKey = false;
-                        while (!correctKey)
-                        {
-                            // To Do (Specific WAITKEY)
-                        }
-                        break;
-                    case "POINT": // POINT variable-related info
-                        String pointName = commandArray[1]; // Variable Name
-                        // Other argument
-                        if (commandArray[2].Equals("setPoint"))
-                        {
-                            sleep(int.Parse(commandArray[3])); // Pausa em ms
-                            POINT tempPoint;
-                            GetCursorPos(out tempPoint); // Obtém as coordenadas XY
-                            pointMap[pointName] = tempPoint; // Adiciona o ponto à lista
-                        }
-                        else if (commandArray[2].StartsWith("X") && commandArray[3].StartsWith("Y"))
-                        {
-                            // Definir o ponto pelas coordenadas
-                            POINT tempPoint;
-                            tempPoint.X = int.Parse(commandArray[2].TrimStart('X'));
-                            tempPoint.Y = int.Parse(commandArray[3].TrimStart('Y'));
-
-                            pointMap[pointName] = tempPoint;
-                        }
-                        break;
-                    case "COLOR": // COLOR variable-related info
-                        String colorName = commandArray[1]; // Variable Name
-                        // Other argument
-                        if (commandArray[2].Equals("getColorAt"))
-                        {
-                            POINT cPoint;
-                            cPoint.X = 0;
-                            cPoint.Y = 0;
-                            if (pointMap.ContainsKey(commandArray[3]))
-                            {
-                                cPoint = pointMap[commandArray[3]]; // Gets the point from the variable list
-                            }
-                            Color tempColor = GetColorAt(cPoint.X, cPoint.Y);
-                            //Console.WriteLine(tempColor);
-
-                            colourMap[colorName] = tempColor;  // Adiciona o ponto à lista
-                        }
-                        else if (commandArray[2].StartsWith("R") && commandArray[3].StartsWith("G") && commandArray[4].StartsWith("B"))
-                        {
-                            // Definir o ponto pelas coordenadas
-                            Color tempColor = Color.FromArgb(255, int.Parse(commandArray[2].TrimStart('R')), int.Parse(commandArray[2].TrimStart('G')), int.Parse(commandArray[2].TrimStart('B')));
-
-                            colourMap[colorName] = tempColor;
-                        }
-                        break;
-                    case "KEYSPAM": // Spams a key
-                        Console.WriteLine("Keypress (Spam Mode): " + Convert.ToInt32(commandArray[1], 16));
-                        SetForegroundWindow(p2.MainWindowHandle);
-                        InputSimulator inp = new InputSimulator();
-                        for (int i = 0; i < 200; i++)
-                        {
-                            inp.Keyboard.KeyPress((VirtualKeyCode)Convert.ToInt32(commandArray[1], 16));
-                        }
-                        break;
-
-                    case "KEYPRESS": // Presses a single key
-                        Console.WriteLine("Keypress: " + Convert.ToInt32(commandArray[1], 16));
-                        Process p21 = Process.GetProcessesByName(processName).FirstOrDefault();
-                        SetForegroundWindow(p21.MainWindowHandle);
-                        InputSimulator inp1 = new InputSimulator();
-                        inp1.Keyboard.KeyPress((VirtualKeyCode)Convert.ToInt32(commandArray[1], 16));
-                        break;
-                    case "IF": // Branch conditions
-
-                        // TO-DO --- Remove hardcoded ops no if
-                        if (commandArray[1].Equals("COLORMATCH"))
-                        {
-                            Color c1 = colourMap[commandArray[2]];
-                            Color c2 = colourMap[commandArray[3]];
-                            if (c1.Equals(c2))
-                            {
-                                // Run operation
-                                switch (commandArray[5])
-                                {
-                                    case "END":
-                                        goto jumpToEnd;
-                                        break;
-                                    case "DORESET":
-                                        goto jumpToReset;
-                                        break;
-                                    default:
-                                        break;
-                                }
-                            }
-                        }
-                        if (commandArray[1].Equals("COLORMISMATCH"))
-                        {
-                            Color c1 = colourMap[commandArray[2]];
-                            Color c2 = colourMap[commandArray[3]];
-                            if (!c1.Equals(c2))
-                            {
-                                // Run operation
-                                switch (commandArray[5])
-                                {
-                                    case "END":
-                                        goto jumpToEnd;
-                                        break;
-                                    case "DORESET":
-                                        goto jumpToReset;
-                                        break;
-                                    default:
-                                        break;
-                                }
-                            }
-                        }
-                        break;
-                    case "PRINTLOOP": // Prints the current loop
-                        Console.Write(loopNumber);
-                        break;
-                    default:
-                        break;
-                }
-            }
-
-            goto jumpToDie;
-            // End Stuff
-            jumpToEnd:
-            for (int j = endIndex; j < fileContents.Count(); j++)
-            {
-                String command = fileContents.ElementAt(j);
-                String[] commandArray = command.Split(' ');
-                if (commandArray.Length == 0) // Quit if no command is found
-                {
-                    runningLoop = false;
-                    goto End;
-                }
-                switch (commandArray[0])
-                {
-                    case "DELAY":
-                        sleep(int.Parse(commandArray[1]));
-                        break;
-                    case "PRINT": // Print Text to Console
-                        commandArray = commandArray.Skip(1).ToArray();
-                        String toPrint = "";
-                        for (int i = 0; i < commandArray.Length; i++) // Concatenar o array (sem PRINT)
-                        {
-                            if (i == commandArray.Length - 1)
-                            {
-                                toPrint += commandArray[i];
-                            }
-                            else
-                            {
-                                toPrint += commandArray[i] + " ";
-                            }
-                        }
-                        // Print do texto
-                        Console.Write(toPrint);
-                        break;
-                    case "PRINTLN": // Print Text to Console (Line)
-                        commandArray = commandArray.Skip(1).ToArray();
-                        toPrint = "";
-                        for (int i = 0; i < commandArray.Length; i++) // Concatenar o array (sem PRINTLN)
-                        {
-                            if (i == commandArray.Length - 1)
-                            {
-                                toPrint += commandArray[i];
-                            }
-                            else
-                            {
-                                toPrint += commandArray[i] + " ";
-                            }
-                        }
-                        // Print do texto
-                        Console.WriteLine(toPrint);
-                        break;
-                    case "WAITKEY": // Waits for key input
-                        if (commandArray[1].Equals("any")) { Console.ReadLine(); break; }
-                        bool correctKey = false;
-                        while (!correctKey)
-                        {
-                            // To Do (Specific WAITKEY)
-                        }
-                        break;
-                    case "POINT": // POINT variable-related info
-                        String pointName = commandArray[1]; // Variable Name
-                        // Other argument
-                        if (commandArray[2].Equals("setPoint"))
-                        {
-                            sleep(int.Parse(commandArray[3])); // Pausa em ms
-                            POINT tempPoint;
-                            GetCursorPos(out tempPoint); // Obtém as coordenadas XY
-                            pointMap[pointName] = tempPoint;// Adiciona o ponto à lista
-                        }
-                        else if (commandArray[2].StartsWith("X") && commandArray[3].StartsWith("Y"))
-                        {
-                            // Definir o ponto pelas coordenadas
-                            POINT tempPoint;
-                            tempPoint.X = int.Parse(commandArray[2].TrimStart('X'));
-                            tempPoint.Y = int.Parse(commandArray[3].TrimStart('Y'));
-
-                            pointMap[pointName] = tempPoint;
-                        }
-                        break;
-                    case "COLOR": // COLOR variable-related info
-                        String colorName = commandArray[1]; // Variable Name
-                        // Other argument
-                        if (commandArray[2].Equals("getColorAt"))
-                        {
-                            POINT cPoint;
-                            cPoint.X = 0;
-                            cPoint.Y = 0;
-                            if (pointMap.ContainsKey(commandArray[3]))
-                            {
-                                cPoint = pointMap[commandArray[3]]; // Gets the point from the variable list
-                            }
-                            Color tempColor = GetColorAt(cPoint.X, cPoint.Y);
-                            //Console.WriteLine(tempColor);
-
-                            colourMap[colorName] = tempColor;  // Adiciona o ponto à lista
-                        }
-                        else if (commandArray[2].StartsWith("R") && commandArray[3].StartsWith("G") && commandArray[4].StartsWith("B"))
-                        {
-                            // Definir o ponto pelas coordenadas
-                            Color tempColor = Color.FromArgb(255, int.Parse(commandArray[2].TrimStart('R')), int.Parse(commandArray[2].TrimStart('G')), int.Parse(commandArray[2].TrimStart('B')));
-
-                            colourMap[colorName] = tempColor;
-                        }
-                        break;
-                    case "KEYSPAM": // Spams a key
-                        Console.WriteLine("Keypress (Spam Mode): " + Convert.ToInt32(commandArray[1], 16));
-                        SetForegroundWindow(p2.MainWindowHandle);
-                        InputSimulator inp = new InputSimulator();
-                        for (int i = 0; i < 200; i++)
-                        {
-                            inp.Keyboard.KeyPress((VirtualKeyCode)Convert.ToInt32(commandArray[1], 16));
-                        }
-                        break;
-
-                    case "KEYPRESS": // Presses a single key
-                        Console.WriteLine("Keypress: " + Convert.ToInt32(commandArray[1], 16));
-                        Process p21 = Process.GetProcessesByName(processName).FirstOrDefault();
-                        SetForegroundWindow(p21.MainWindowHandle);
-                        InputSimulator inp1 = new InputSimulator();
-                        inp1.Keyboard.KeyPress((VirtualKeyCode)Convert.ToInt32(commandArray[1], 16));
-                        break;
-                    case "PRINTLOOP": // Prints the current loop
-                        Console.Write(loopNumber);
-                        break;
-                    default:
-                        break;
-                }
-            }
-
-            End:
+            Process p2 = null;
 
             // Main Loop
 
@@ -747,7 +104,7 @@ namespace SiopaRetardBot
                         if (commandArray.Length == 0) // Quit if no command is found
                         {
                             runningLoop = false;
-                            goto jumpToDie;
+                            break;
                         }
                         switch (commandArray[0])
                         {
@@ -755,10 +112,11 @@ namespace SiopaRetardBot
                                 readMode = 1;
                                 break;
                             case "DELAY":
+                                Console.WriteLine("Delay: " + commandArray[1]);
                                 sleep(int.Parse(commandArray[1]));
                                 break;
                             case "PROCESS": // Process name
-                                if (!processIsSet)
+                                if (true)
                                 {
                                     commandArray = commandArray.Skip(1).ToArray();
                                     for (int i = 0; i < commandArray.Length; i++) // Concatenar o array (sem PROCESS)
@@ -772,17 +130,28 @@ namespace SiopaRetardBot
                                             processName += commandArray[i] + " ";
                                         }
                                     }
-                                    processIsSet = true;
+                                    
                                     Console.WriteLine("Target Process: " + processName);
                                 }
-                                else
-                                {
-                                    Console.WriteLine("Error. Script attempted to set process twice.");
-                                    runningLoop = false;
-                                    goto jumpToDie;
-                                }
                                 break;
-
+                            case "TITLE":
+                                Console.WriteLine("Title: " + commandArray[1]);
+                                commandArray = commandArray.Skip(1).ToArray();
+                                String toTitle = "";
+                                for (int i = 0; i < commandArray.Length; i++) // Concatenar o array (sem PRINT)
+                                {
+                                    if (i == commandArray.Length - 1)
+                                    {
+                                        toTitle += commandArray[i];
+                                    }
+                                    else
+                                    {
+                                        toTitle += commandArray[i] + " ";
+                                    }
+                                }
+                                // Console Title
+                                Console.Title = toTitle;
+                                break;
                             case "PRINT": // Print Text to Console
                                 commandArray = commandArray.Skip(1).ToArray();
                                 String toPrint = "";
@@ -895,21 +264,498 @@ namespace SiopaRetardBot
                 else if (readMode == 1)
                 {
                     // Main Loop Mode
+                    bool newLoop = true;
+                    p2 = Process.GetProcessesByName(processName).FirstOrDefault();
+                    if (p2 == null)
+                    {
+                        runningLoop = false;
+                        Console.WriteLine("Null process error (" + processName + ").");
+                        break;
+                    }
+                    InputSimulator a = new InputSimulator();
+                    if (a.InputDeviceState.IsTogglingKeyInEffect(VirtualKeyCode.CAPITAL))
+                    {
+                        Console.WriteLine("Terminated!");
+                        Console.ReadLine();
+                        runningLoop = false;
+                        break;
+                    }
+                    if (loopNumber >= maxLoop)
+                    {
+                        runningLoop = false;
+                        Console.WriteLine("Maximum loop count reached (" + maxLoop + ").");
+                        break;
+                    }
+
+                    for (int j = mainLoopIndex[0]; j < fileContents.Count(); j++)
+                    {
+                        String command = fileContents.ElementAt(j);
+                        String[] commandArray = command.Split(' ');
+                        if (commandArray.Length == 0) // Quit if no command is found
+                        {
+                            runningLoop = false;
+                            break;
+                        }
+
+                        if (commandArray[0].Equals("LOOP"))
+                        {
+                            //Console.WriteLine("Looping...");
+                            j = mainLoopIndex[0];
+
+                            break;
+                        }
+                        if (commandArray[0].Equals("CONFIGRESET"))
+                        {
+                            readMode = 2;
+                            break;
+                        }
+                        switch (commandArray[0])
+                        {
+                            case "TITLE":
+                                Console.WriteLine("Title: " + commandArray[1]);
+                                commandArray = commandArray.Skip(1).ToArray();
+                                String toTitle = "";
+                                for (int i = 0; i < commandArray.Length; i++) // Concatenar o array (sem PRINT)
+                                {
+                                    if (i == commandArray.Length - 1)
+                                    {
+                                        toTitle += commandArray[i];
+                                    }
+                                    else
+                                    {
+                                        toTitle += commandArray[i] + " ";
+                                    }
+                                }
+                                // Console Title
+                                Console.Title = toTitle;
+                                break;
+                            case "DELAY":
+                                Console.WriteLine("Delay: " + commandArray[1]);
+                                sleep(int.Parse(commandArray[1]));
+                                break;
+                            case "PRINT": // Print Text to Console
+                                commandArray = commandArray.Skip(1).ToArray();
+                                String toPrint = "";
+                                for (int i = 0; i < commandArray.Length; i++) // Concatenar o array (sem PRINT)
+                                {
+                                    if (i == commandArray.Length - 1)
+                                    {
+                                        toPrint += commandArray[i];
+                                    }
+                                    else
+                                    {
+                                        toPrint += commandArray[i] + " ";
+                                    }
+                                }
+                                // Print do texto
+                                Console.Write(toPrint);
+                                break;
+                            case "PRINTLN": // Print Text to Console (Line)
+                                commandArray = commandArray.Skip(1).ToArray();
+                                toPrint = "";
+                                for (int i = 0; i < commandArray.Length; i++) // Concatenar o array (sem PRINTLN)
+                                {
+                                    if (i == commandArray.Length - 1)
+                                    {
+                                        toPrint += commandArray[i];
+                                    }
+                                    else
+                                    {
+                                        toPrint += commandArray[i] + " ";
+                                    }
+                                }
+                                // Print do texto
+                                Console.WriteLine(toPrint);
+                                break;
+                            case "WAITKEY": // Waits for key input
+                                if (commandArray[1].Equals("any")) { Console.ReadLine(); break; }
+                                bool correctKey = false;
+                                while (!correctKey)
+                                {
+                                    // To Do (Specific WAITKEY)
+                                }
+                                break;
+                            case "POINT": // POINT variable-related info
+                                String pointName = commandArray[1]; // Variable Name
+                                                                    // Other argument
+                                if (commandArray[2].Equals("setPoint"))
+                                {
+                                    sleep(int.Parse(commandArray[3])); // Pausa em ms
+                                    POINT tempPoint;
+                                    GetCursorPos(out tempPoint); // Obtém as coordenadas XY
+                                    pointMap[pointName] = tempPoint; // Adiciona o ponto à lista
+                                }
+                                else if (commandArray[2].StartsWith("X") && commandArray[3].StartsWith("Y"))
+                                {
+                                    // Definir o ponto pelas coordenadas
+                                    POINT tempPoint;
+                                    tempPoint.X = int.Parse(commandArray[2].TrimStart('X'));
+                                    tempPoint.Y = int.Parse(commandArray[3].TrimStart('Y'));
+
+                                    pointMap[pointName] = tempPoint;
+                                }
+                                break;
+                            case "COLOR": // COLOR variable-related info
+                                String colorName = commandArray[1]; // Variable Name
+                                                                    // Other argument
+                                if (commandArray[2].Equals("getColorAt"))
+                                {
+                                    POINT cPoint;
+                                    cPoint.X = 0;
+                                    cPoint.Y = 0;
+                                    if (pointMap.ContainsKey(commandArray[3]))
+                                    {
+                                        cPoint = pointMap[commandArray[3]]; // Gets the point from the variable list
+                                    }
+                                    Color tempColor = GetColorAt(cPoint.X, cPoint.Y);
+                                    //Console.WriteLine(tempColor);
+
+                                    colourMap[colorName] = tempColor; // Adiciona o ponto à lista
+                                }
+                                else if (commandArray[2].StartsWith("R") && commandArray[3].StartsWith("G") && commandArray[4].StartsWith("B"))
+                                {
+                                    // Definir o ponto pelas coordenadas
+                                    Color tempColor = Color.FromArgb(255, int.Parse(commandArray[2].TrimStart('R')), int.Parse(commandArray[2].TrimStart('G')), int.Parse(commandArray[2].TrimStart('B')));
+
+                                    colourMap[colorName] = tempColor;
+                                }
+                                break;
+                            case "KEYSPAM": // Spams a key
+                                Console.WriteLine("Keypress (Spam Mode): " + Convert.ToInt32(commandArray[1], 16));
+                                IntPtr h = p2.MainWindowHandle;
+                                SetForegroundWindow(h);
+                                InputSimulator inp = new InputSimulator();
+                                String tempString = "";
+                                int keyCode = Convert.ToInt32(commandArray[1], 16);
+                                if (specialKeys.ContainsKey(keyCode))
+                                {
+                                    tempString = specialKeys[keyCode];
+                                }
+                                else
+                                {
+                                    tempString = "" + (char)keyCode;
+                                }
+                                for (int i = 0; i < 200; i++)
+                                {
+                                    //inp.Keyboard.KeyPress((VirtualKeyCode)Convert.ToInt32(commandArray[1], 16));
+                                    SendKeys.SendWait(tempString);
+                                }
+                                break;
+
+                            case "KEYPRESS": // Presses a single key
+                                Console.WriteLine("Keypress: " + Convert.ToInt32(commandArray[1], 16));
+                                IntPtr h2 = p2.MainWindowHandle;
+                                SetForegroundWindow(h2);
+                                InputSimulator inp1 = new InputSimulator();
+                                String tempString1 = "";
+                                int keyCode1 = Convert.ToInt32(commandArray[1], 16);
+                                if (specialKeys.ContainsKey(keyCode1))
+                                {
+                                    tempString1 = specialKeys[keyCode1];
+                                }
+                                else
+                                {
+                                    tempString1 = "" + (char)keyCode1;
+                                }
+                                SendKeys.SendWait(tempString1);
+                                //inp1.Keyboard.KeyPress((VirtualKeyCode)Convert.ToInt32(commandArray[1], 16));
+                                break;
+                            case "IF": // Branch conditions
+
+                                // TO-DO --- Remove hardcoded ops no if
+                                if (commandArray[1].Equals("COLORMATCH"))
+                                {
+                                    Color c1 = colourMap[commandArray[2]];
+                                    Color c2 = colourMap[commandArray[3]];
+                                    if (c1.Equals(c2))
+                                    {
+                                        // Run operation
+                                        switch (commandArray[5])
+                                        {
+                                            case "END":
+                                                readMode = 3;
+                                                break;
+                                            case "DORESET":
+                                                readMode = 2;
+                                                break;
+                                            default:
+                                                break;
+                                        }
+                                    }
+                                }
+                                if (commandArray[1].Equals("COLORMISMATCH"))
+                                {
+                                    Color c1 = colourMap[commandArray[2]];
+                                    Color c2 = colourMap[commandArray[3]];
+                                    if (!c1.Equals(c2))
+                                    {
+                                        // Run operation
+                                        switch (commandArray[5])
+                                        {
+                                            case "END":
+                                                readMode = 3;
+                                                break;
+                                            case "DORESET":
+                                                readMode = 2;
+                                                break;
+                                            default:
+                                                break;
+                                        }
+                                    }
+                                }
+                                break;
+                            case "PRINTLOOP": // Prints the current loop
+                                Console.Write(loopNumber);
+                                break;
+                            default:
+                                break;
+                        }
+                    }
 
                     // Increment Loop Counter
                     loopNumber++;
+
+                    //
+
                 }
                 else if (readMode == 2)
                 {
                     // Reset Mode
 
-                    // Change Back to Mode 1
+                    for (int j = resetIndex[0]; j < fileContents.Count(); j++)
+                    {
+                        String command = fileContents.ElementAt(j);
+                        String[] commandArray = command.Split(' ');
+                        if (commandArray.Length == 0) // Quit if no command is found
+                        {
+                            runningLoop = false;
+                            break;
+                        }
+                        if (commandArray[0].Equals("ENDRESET"))
+                            break;
+
+                        switch (commandArray[0])
+                        {
+                            case "DELAY":
+                                Console.WriteLine("Delay: " + commandArray[1]);
+                                sleep(int.Parse(commandArray[1]));
+                                break;
+                            case "TITLE":
+                                Console.WriteLine("Title: " + commandArray[1]);
+                                commandArray = commandArray.Skip(1).ToArray();
+                                String toTitle = "";
+                                for (int i = 0; i < commandArray.Length; i++) // Concatenar o array (sem PRINT)
+                                {
+                                    if (i == commandArray.Length - 1)
+                                    {
+                                        toTitle += commandArray[i];
+                                    }
+                                    else
+                                    {
+                                        toTitle += commandArray[i] + " ";
+                                    }
+                                }
+                                // Console Title
+                                Console.Title = toTitle;
+                                break;
+                            case "PRINT": // Print Text to Console
+                                commandArray = commandArray.Skip(1).ToArray();
+                                String toPrint = "";
+                                for (int i = 0; i < commandArray.Length; i++) // Concatenar o array (sem PRINT)
+                                {
+                                    if (i == commandArray.Length - 1)
+                                    {
+                                        toPrint += commandArray[i];
+                                    }
+                                    else
+                                    {
+                                        toPrint += commandArray[i] + " ";
+                                    }
+                                }
+                                // Print do texto
+                                Console.Write(toPrint);
+                                break;
+                            case "PRINTLN": // Print Text to Console (Line)
+                                commandArray = commandArray.Skip(1).ToArray();
+                                toPrint = "";
+                                for (int i = 0; i < commandArray.Length; i++) // Concatenar o array (sem PRINTLN)
+                                {
+                                    if (i == commandArray.Length - 1)
+                                    {
+                                        toPrint += commandArray[i];
+                                    }
+                                    else
+                                    {
+                                        toPrint += commandArray[i] + " ";
+                                    }
+                                }
+                                // Print do texto
+                                Console.WriteLine(toPrint);
+                                break;
+                            case "WAITKEY": // Waits for key input
+                                if (commandArray[1].Equals("any")) { Console.ReadLine(); break; }
+                                bool correctKey = false;
+                                while (!correctKey)
+                                {
+                                    // To Do (Specific WAITKEY)
+                                }
+                                break;
+                            case "PRINTLOOP": // Prints the current loop
+                                Console.Write(loopNumber);
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+
+                    // Change Back to Mode 1 after hitting the reset key
+                    IntPtr h = p2.MainWindowHandle;
+                    SetForegroundWindow(h);
+                    Console.WriteLine("RESET Keypress: " + resetKey);
+                    String resetString = "" + (char)resetKey;
+                    if (specialKeys.ContainsKey(resetKey))
+                    {
+                        resetString = specialKeys[resetKey];
+                        //Console.WriteLine(resetString);
+                    }
+                    InputSimulator inp2 = new InputSimulator();
+                    for (int k = 0; k < 200; k++)
+                    {
+                        //inp2.Keyboard.KeyPress((VirtualKeyCode)resetKey);
+                        SendKeys.SendWait(resetString);
+                    }
                     readMode = 1;
                 }
                 else if (readMode == 3)
                 {
                     // End Mode
+                    for (int j = endIndex; j < fileContents.Count(); j++)
+                    {
+                        String command = fileContents.ElementAt(j);
+                        String[] commandArray = command.Split(' ');
+                        if (commandArray.Length == 0) // Quit if no command is found
+                        {
+                            runningLoop = false;
+                            break;
+                        }
+                        switch (commandArray[0])
+                        {
+                            case "DELAY":
+                                Console.WriteLine("Delay: " + commandArray[1]);
+                                sleep(int.Parse(commandArray[1]));
+                                break;
+                            case "TITLE":
+                                Console.WriteLine("Title: " + commandArray[1]);
+                                commandArray = commandArray.Skip(1).ToArray();
+                                String toTitle = "";
+                                for (int i = 0; i < commandArray.Length; i++) // Concatenar o array (sem PRINT)
+                                {
+                                    if (i == commandArray.Length - 1)
+                                    {
+                                        toTitle += commandArray[i];
+                                    }
+                                    else
+                                    {
+                                        toTitle += commandArray[i] + " ";
+                                    }
+                                }
+                                // Console Title
+                                Console.Title = toTitle;
+                                break;
+                            case "PRINT": // Print Text to Console
+                                commandArray = commandArray.Skip(1).ToArray();
+                                String toPrint = "";
+                                for (int i = 0; i < commandArray.Length; i++) // Concatenar o array (sem PRINT)
+                                {
+                                    if (i == commandArray.Length - 1)
+                                    {
+                                        toPrint += commandArray[i];
+                                    }
+                                    else
+                                    {
+                                        toPrint += commandArray[i] + " ";
+                                    }
+                                }
+                                // Print do texto
+                                Console.Write(toPrint);
+                                break;
+                            case "PRINTLN": // Print Text to Console (Line)
+                                commandArray = commandArray.Skip(1).ToArray();
+                                toPrint = "";
+                                for (int i = 0; i < commandArray.Length; i++) // Concatenar o array (sem PRINTLN)
+                                {
+                                    if (i == commandArray.Length - 1)
+                                    {
+                                        toPrint += commandArray[i];
+                                    }
+                                    else
+                                    {
+                                        toPrint += commandArray[i] + " ";
+                                    }
+                                }
+                                // Print do texto
+                                Console.WriteLine(toPrint);
+                                break;
+                            case "WAITKEY": // Waits for key input
+                                if (commandArray[1].Equals("any")) { Console.ReadLine(); break; }
+                                bool correctKey = false;
+                                while (!correctKey)
+                                {
+                                    // To Do (Specific WAITKEY)
+                                }
+                                break;
+                            case "POINT": // POINT variable-related info
+                                String pointName = commandArray[1]; // Variable Name
+                                                                    // Other argument
+                                if (commandArray[2].Equals("setPoint"))
+                                {
+                                    sleep(int.Parse(commandArray[3])); // Pausa em ms
+                                    POINT tempPoint;
+                                    GetCursorPos(out tempPoint); // Obtém as coordenadas XY
+                                    pointMap[pointName] = tempPoint;// Adiciona o ponto à lista
+                                }
+                                else if (commandArray[2].StartsWith("X") && commandArray[3].StartsWith("Y"))
+                                {
+                                    // Definir o ponto pelas coordenadas
+                                    POINT tempPoint;
+                                    tempPoint.X = int.Parse(commandArray[2].TrimStart('X'));
+                                    tempPoint.Y = int.Parse(commandArray[3].TrimStart('Y'));
 
+                                    pointMap[pointName] = tempPoint;
+                                }
+                                break;
+                            case "COLOR": // COLOR variable-related info
+                                String colorName = commandArray[1]; // Variable Name
+                                                                    // Other argument
+                                if (commandArray[2].Equals("getColorAt"))
+                                {
+                                    POINT cPoint;
+                                    cPoint.X = 0;
+                                    cPoint.Y = 0;
+                                    if (pointMap.ContainsKey(commandArray[3]))
+                                    {
+                                        cPoint = pointMap[commandArray[3]]; // Gets the point from the variable list
+                                    }
+                                    Color tempColor = GetColorAt(cPoint.X, cPoint.Y);
+                                    //Console.WriteLine(tempColor);
+
+                                    colourMap[colorName] = tempColor;  // Adiciona o ponto à lista
+                                }
+                                else if (commandArray[2].StartsWith("R") && commandArray[3].StartsWith("G") && commandArray[4].StartsWith("B"))
+                                {
+                                    // Definir o ponto pelas coordenadas
+                                    Color tempColor = Color.FromArgb(255, int.Parse(commandArray[2].TrimStart('R')), int.Parse(commandArray[2].TrimStart('G')), int.Parse(commandArray[2].TrimStart('B')));
+
+                                    colourMap[colorName] = tempColor;
+                                }
+                                break;
+                            case "PRINTLOOP": // Prints the current loop
+                                Console.Write(loopNumber);
+                                break;
+                            default:
+                                break;
+                        }
+                    }
                     // Die
                     runningLoop = false;
                     break;
@@ -935,19 +781,6 @@ namespace SiopaRetardBot
                     retList.Add(line);
             }
             return retList;
-        }
-
-        // Checks if process is running
-        static bool processIsRunning(String processName)
-        {
-            Process p2 = Process.GetProcessesByName(processName).FirstOrDefault(); // Adicionar escolha de processo?
-
-            if (p2 == null)
-            {
-                Console.WriteLine("Null process error (" + processName + ").");
-                return false;
-            }
-            return true;
         }
 
         // Sleep

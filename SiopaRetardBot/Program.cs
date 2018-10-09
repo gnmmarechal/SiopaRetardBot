@@ -184,15 +184,6 @@ namespace SiopaRetardBot
                 {
                     switch(command)
                     {
-                        case 0x7B:
-                            IntPtr h = p.MainWindowHandle;
-                            SetForegroundWindow(h);
-                            //keybd_event(0x7b, 0x58, 0, 0);
-                            Console.WriteLine("Keypress: " + 0x07B);
-                            //keybd_event(0x7b, 0xd8, 2, 0);
-                            InputSimulator inp2 = new InputSimulator();
-                            inp2.Keyboard.KeyPress((VirtualKeyCode)0x07B);
-                            break;
                         case 0:
                             IntPtr h3 = p.MainWindowHandle;
                             SetForegroundWindow(h3);
