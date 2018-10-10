@@ -797,7 +797,24 @@ namespace SiopaRetardBot
             System.IO.StreamReader file = new System.IO.StreamReader(fileName);
             while ((line = file.ReadLine()) != null)
             {
-                if (!line.StartsWith("#") && !String.IsNullOrWhiteSpace(line))
+                for (int i = 0; i < line.Length; i++) // Remove indentation from script
+                {
+                    if (char.IsWhiteSpace(line[i]))
+                    {
+                        line = line.Substring(1);
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+
+                if (line.Contains("#")) // Remove comments
+                {
+                    line = line.Substring(0, line.IndexOf("#"));
+                }
+
+                if (!line.StartsWith("#") && !String.IsNullOrWhiteSpace(line)) // Removes comment lines / Adds
                     retList.Add(line);
             }
             return retList;

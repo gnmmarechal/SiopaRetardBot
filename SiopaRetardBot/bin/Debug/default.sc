@@ -1,16 +1,16 @@
 # Pokémon Insurgence Starter Shiny Hunter Script/ SiopaScriptv2 Test Script
 
 # Config
-TITLE SiopaRetardBot
-PRINTLN SiopaRetardBot v.InsurgenceRetard2.0
-PROCESS Game
-RESET 0x7B
-KILL 0x14
-PAUSE 0x90
-WAITKEY any
+TITLE SiopaRetardBot # Sets console window title
+PRINTLN SiopaRetardBot v.InsurgenceRetard2.0 # Prints line to console
+PROCESS Game # Process name for Insurgence
+RESET 0x7B # Set Reset key to F12
+KILL 0x14 # Set Kill toggle to CAPSLOCK
+PAUSE 0x90 # Set Pause toggle to NUMLOCK
+WAITKEY any # Waits for any key input
 PRINTLN Reading original colour...
-POINT ogColorPoint setPoint 50
-COLOR ogColor getColorAt ogColorPoint
+POINT ogColorPoint setPoint 50 # Sets the POINT variable ogColorPoint to the current position of the mouse after a delay of 50ms
+COLOR ogColor getColorAt ogColorPoint # Sets the COLOR variable ogColor to the colour at the position of ogColorPoint
 WAITKEY any
 PRINTLN Reading shiny colour...
 POINT shinyColorPoint setPoint 50
@@ -20,31 +20,31 @@ PRINTLN Reading X/Y...
 POINT targetPoint setPoint 50
 
 # Loop
-START
+START # Starts the loop section
 
-KEYSPAM 0x0D
+	KEYSPAM 0x0D # Spam ENTER
 
-COLOR currentColor getColorAt targetPoint
-IF COLORMATCH shinyColor currentColor THEN END
-IF COLORMATCH ogColor currentColor THEN DORESET
+	COLOR currentColor getColorAt targetPoint
+	IF COLORMATCH shinyColor currentColor THEN END # Matches currentColor to shinyColor and jumps to END if they match
+	IF COLORMATCH ogColor currentColor THEN DORESET # Matches currentColor to ogColor and jumps to RESET if they match
 
-PRINT LOOP:
-PRINTLOOP
+	PRINT Loop Count: # Prints to console window
+	PRINTLOOP # Prints the loop counter
 
-PRINTLN .
+	PRINTLN .
 
-LOOP
+LOOP # Closes the loop section
 
-CONFIGRESET
+CONFIGRESET # Starts the reset section
 
-PRINTLN Colour mismatch! Resetting.
+	PRINTLN Colour mismatch! Resetting.
 
-PRINT Reset Number: 
-PRINTRESET
+	PRINT Reset Count: 
+	PRINTRESET # Prints the reset counter
 
-PRINTLN .
+	PRINTLN .
 
-ENDRESET
+ENDRESET # Closes the reset section and actually resets back to START
 
 
 END
