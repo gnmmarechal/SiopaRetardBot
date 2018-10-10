@@ -1,23 +1,29 @@
 # Pokémon Insurgence Starter Shiny Hunter Script/ SiopaScriptv2 Test Script
 
 # Config
-TITLE SiopaRetardBot # Sets console window title
+CLEAR # Clear the console window
+TITLE Pokémon Insurgence Static Event Shiny Hunter Script # Sets console window title
 PRINTLN SiopaRetardBot v.InsurgenceRetard2.0 # Prints line to console
 PROCESS Game # Process name for Insurgence
 RESET 0x7B # Set Reset key to F12
 KILL 0x14 # Set Kill toggle to CAPSLOCK
 PAUSE 0x90 # Set Pause toggle to NUMLOCK
+PRINTLN Place the cursor over the original Pokémon colour and hit ENTER.
 WAITKEY any # Waits for any key input
 PRINTLN Reading original colour...
 POINT ogColorPoint setPoint 50 # Sets the POINT variable ogColorPoint to the current position of the mouse after a delay of 50ms
 COLOR ogColor getColorAt ogColorPoint # Sets the COLOR variable ogColor to the colour at the position of ogColorPoint
+PRINTLN Done!
+PRINTLN Place the cursor over the shiny Pokémon colour and hit ENTER.
 WAITKEY any
 PRINTLN Reading shiny colour...
 POINT shinyColorPoint setPoint 50
 COLOR shinyColor getColorAt shinyColorPoint
+PRINTLN Place the cursor over the target position and hit ENTER.
 WAITKEY any
 PRINTLN Reading X/Y...
 POINT targetPoint setPoint 50
+PRINTLN Done!
 
 # Loop
 START # Starts the loop section

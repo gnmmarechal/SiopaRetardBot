@@ -188,7 +188,9 @@ namespace SiopaRetardBot
                                 // Print do texto
                                 Console.WriteLine(toPrint);
                                 break;
-
+                            case "CLEAR": // Clear the console screen
+                                Console.Clear();
+                                break;
                             case "KILL": // Define the kill toggle
                                 killToggle = Convert.ToInt32(commandArray[1], 16);
                                 Console.WriteLine("Kill Toggle: " + killToggle);
@@ -321,6 +323,9 @@ namespace SiopaRetardBot
                         }
                         switch (commandArray[0])
                         {
+                            case "CLEAR": // Clear the console screen
+                                Console.Clear();
+                                break;
                             case "TITLE":
                                 Console.WriteLine("Title: " + commandArray[1]);
                                 commandArray = commandArray.Skip(1).ToArray();
@@ -549,6 +554,9 @@ namespace SiopaRetardBot
 
                         switch (commandArray[0])
                         {
+                            case "CLEAR": // Clear the console screen
+                                Console.Clear();
+                                break;
                             case "DELAY":
                                 Console.WriteLine("Delay: " + commandArray[1]);
                                 sleep(int.Parse(commandArray[1]));
@@ -657,6 +665,9 @@ namespace SiopaRetardBot
                         }
                         switch (commandArray[0])
                         {
+                            case "CLEAR": // Clear the console screen
+                                Console.Clear();
+                                break;
                             case "DELAY":
                                 Console.WriteLine("Delay: " + commandArray[1]);
                                 sleep(int.Parse(commandArray[1]));
